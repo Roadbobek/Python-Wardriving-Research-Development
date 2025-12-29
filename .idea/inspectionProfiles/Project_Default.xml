@@ -1,0 +1,22 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="websocket" />
+          <option value="requests" />
+          <option value="selenium" />
+          <option value="Pillow" />
+          <option value="python-osc" />
+          <option value="speechrecognition" />
+          <option value="PyAudio" />
+          <option value="ultralytics" />
+          <option value="opencv-python" />
+          <option value="easyocr" />
+          <option value="opencv-contrib-python" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
