@@ -76,6 +76,6 @@ def start_scanner(iface):
 
 
 if __name__ == "__main__":
-    # Change 'wlan0' to your monitor interface name
-    target_iface = "wlan0"
+    # Change 'wlan0mon' to your monitor interface name
+    target_iface = "wlan0mon"
     start_scanner(target_iface)
