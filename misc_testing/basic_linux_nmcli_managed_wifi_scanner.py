@@ -32,8 +32,17 @@ def scan_managed_perfect():
             if match:
                 ssid, bssid, signal, channel, security = match.groups()
 
-                # If SSID is empty, it's a hidden network
-                display_ssid = ssid if ssid else "[HIDDEN]"
+                # If the ssid is empty we name it '[HIDDEN]',
+                # if the name is actually '[HIDDEN]' we let the user know,
+                # else we leave it.
+
+                if ssid:
+                    if ssid.strip() == "[HIDDEN]":
+                        display_ssid = f"! SSID NAME IS ({ssid})"
+                    else:
+                        display_ssid = f"({ssid})"
+                else:
+                    display_ssid = "[HIDDEN]"
 
                 print(f"{display_ssid[:20]:<20} | {bssid} | {signal:>3}% | {channel:>3} | {security}")
             else:
