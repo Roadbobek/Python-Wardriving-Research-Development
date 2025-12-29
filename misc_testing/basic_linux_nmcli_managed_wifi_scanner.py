@@ -4,7 +4,7 @@ import re
 
 def scan_managed_perfect():
     print(f"{'SSID':<20} | {'BSSID':<17} | {'SIG':<4} | {'CH':<3} | {'SECURITY'}")
-    print("-" * 80)
+    print("-" * 69)
 
     # We use -e no to keep MACs clean and add SECURITY to the fields
     cmd = ["nmcli", "-t", "-e", "no", "-f", "SSID,BSSID,SIGNAL,CHAN,SECURITY", "dev", "wifi", "list"]
