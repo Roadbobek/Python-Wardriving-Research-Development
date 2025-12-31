@@ -1,6 +1,8 @@
 import sys
 import os
 from scapy.all import *
+from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt
+
 
 # 1. CHECK FOR SUDO
 if os.geteuid() != 0:
@@ -44,12 +46,30 @@ def packet_handler(pkt):
     security = " / ".join(crypto) if crypto else "OPEN"
 
     # 6. CHECK FOR WPS (Deep Packet Inspection)
-    # We look for the Vendor Specific tag (Type 221) that matches WPS
-    has_wps = "[WPS]" if pkt.haslayer(Dot11EltVendor) and b"\x00P\xf2\x04" in bytes(pkt) else ""
+    # Check for the Vendor Specific Element (ID 221) that matches WPS
+    # 00:50:f2:04 is the hex signature for Microsoft/WPS
+
+    # Solution 1 (fastest)
+    # The 'info' field of the Beacon layer contains all the IEs
+    # This is faster than bytes(pkt) because it's a smaller search area
+    has_wps = "[WPS]" if b"\x00P\xf2\x04" in pkt.getlayer(Dot11Beacon).payload.original else ""
+
+    # Solution 2
+    # # The 'bytes(pkt)' converts the whole packet to hex and looks for the WPS hex string
+    # has_wps = "[WPS]" if b"\x00P\xf2\x04" in bytes(pkt) else ""
+
+    # Solution 3
+    # has_wps = ""
+    # if pkt.haslayer(Dot11Elt):
+    #     p = pkt[Dot11Elt]
+    #     while isinstance(p, Dot11Elt):
+    #         if p.ID == 221 and b"\x00P\xf2\x04" in p.info:
+    #             has_wps = "[WPS]"
+    #             break
+    #         p = p.payload
 
     # PRINT FORMATTED OUTPUT
     print(f"CH:{str(channel):>3} | {rssi:>4}dBm | {bssid} | {security:<15} {has_wps:<5} | {display_ssid}")
-
 
 def start_scanner(iface):
     # 2. CHECK FOR MONITOR MODE
