@@ -3,7 +3,23 @@ import sys
 import logging
 from datetime import datetime
 
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+
+# Silence the Scapy error we get when channel hopping, due to the socket getting nothing
+#  Define the filter
+class NoneTypeFilter(logging.Filter):
+    def filter(self, record):
+        # Return False if the error message contains 'NoneType'
+        # This is the specific "blip" caused by channel hopping
+        return "NoneType" not in record.getMessage()
+
+# Apply it to Scapy's runtime logger
+scapy_log = logging.getLogger("scapy.runtime")
+scapy_log.setLevel(logging.ERROR) # Let actual errors through
+scapy_log.addFilter(NoneTypeFilter()) # But block the NoneType ones
+
+# Silence Scapy runtime errors
+# logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+
 
 from scapy.all import *
 from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt
@@ -126,17 +142,18 @@ def start_scanner(iface):
     print(f"{'CH':<6} | {'SIG':<7} | {'BSSID':<17} | {'SECURITY':<10} {'WPS':<4} | {'BAND / FREQ':<15} | {'SSID'}")
     print("-" * 100)
 
-    while True:
-        try:
-            sniff(iface=iface, prn=packet_handler, store=0, timeout=3) # Pause every 3 seconds to check for CTRL+C
-        except KeyboardInterrupt:
-            print(f"\n[!] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Stopping sniffer... cleaning up.")
-            os._exit(0)
-            # sys.exit(0)
-        except Exception:
-            # If the socket fails during a channel hop, wait 50ms and restart
-            time.sleep(0.05)
-            continue
+    try:
+        while True:
+            try:
+                sniff(iface=iface, prn=packet_handler, store=0)
+            except Exception:
+                # If the socket fails during a channel hop, wait 50ms and restart
+                time.sleep(0.05)
+                continue
+    except KeyboardInterrupt:
+        print(f"\n[!] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Stopping sniffer... cleaning up.")
+        sys.exit(0)
+        # os._exit(0)
 
 
 if __name__ == "__main__":
