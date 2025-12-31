@@ -14,9 +14,10 @@ if os.geteuid() != 0:
 def channel_hopper(interface, channels):
     while True:
         for channel in channels:
-            os.system(f"iw dev {interface} set channel {channel}")
+            subprocess.run(["iw", "dev", interface, "set", "channel", str(channel)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # os.system(f"iw dev {interface} set channel {channel}")
             time.sleep(0.1) # Hop every 100ms
-
 
 def packet_handler(pkt):
     # Only process Beacon frames
@@ -114,7 +115,13 @@ def start_scanner(iface):
     print(f"{'CH':<6} | {'SIG':<7} | {'BSSID':<17} | {'SECURITY':<10} {'WPS':<4} | {'BAND / FREQ':<15} | {'SSID'}")
     print("-" * 100)
 
-    sniff(iface=iface, prn=packet_handler, store=0)
+    while True:
+        try:
+            sniff(iface=iface, prn=packet_handler, store=0)
+        except Exception:
+            # If the socket fails during a channel hop, wait 50ms and restart
+            time.sleep(0.05)
+            continue
 
 
 if __name__ == "__main__":
