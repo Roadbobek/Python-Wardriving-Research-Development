@@ -84,7 +84,7 @@ def packet_handler(pkt):
     #          p = p.payload
 
     # PRINT FORMATTED OUTPUT
-    print(f"CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<15} {has_wps:<5} | {band}/{freq}{"MHz":<8} | {display_ssid}")
+    print(f"CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<12} {has_wps:<2} | {band}/{freq}{"MHz":<4} | {display_ssid}")
 
 def start_scanner(iface):
     # 2. CHECK FOR MONITOR MODE
@@ -104,7 +104,7 @@ def start_scanner(iface):
 
     print(f"\n[*] Sniffing on {iface}... Press Ctrl+C to stop.")
     print("-" * 100)
-    print(f"{'CH':<6} | {'SIG':<7} | {'BSSID':<17} | {'SECURITY':<13} {'WPS':<7} | {'BAND / FREQ':<15} | {'SSID'}")
+    print(f"{'CH':<6} | {'SIG':<7} | {'BSSID':<17} | {'SECURITY':<10} {'WPS':<4} | {'BAND / FREQ':<15} | {'SSID'}")
     print("-" * 100)
 
     sniff(iface=iface, prn=packet_handler, store=0)
