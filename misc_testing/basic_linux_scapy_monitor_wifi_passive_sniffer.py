@@ -132,7 +132,7 @@ if __name__ == "__main__":
     channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
 
     # START CHANNEL HOPPER IN ITS OWN THREAD
-    hopper_thread = threading.Thread(target=channel_hopper, args=("wlan0", channels), daemon=True)
+    hopper_thread = threading.Thread(target=channel_hopper, args=(target_iface, channels), daemon=True)
     hopper_thread.start()
 
     # START THE PACKET HANDLER
