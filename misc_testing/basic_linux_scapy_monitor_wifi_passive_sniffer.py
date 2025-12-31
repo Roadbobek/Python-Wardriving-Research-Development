@@ -1,5 +1,9 @@
 import sys
 import os
+import logging
+
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+
 from scapy.all import *
 from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt
 
@@ -18,6 +22,7 @@ def channel_hopper(interface, channels):
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # os.system(f"iw dev {interface} set channel {channel}")
             time.sleep(0.1) # Hop every 100ms
+
 
 def packet_handler(pkt):
     # Only process Beacon frames
@@ -94,6 +99,7 @@ def packet_handler(pkt):
     # PRINT FORMATTED OUTPUT
     print(f"CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<12} {has_wps:<2} | {band}/{freq}{"MHz":<4} | {display_ssid}")
 
+
 def start_scanner(iface):
     # CHECK FOR MONITOR MODE
     # We check the 'type' file in sysfs for the interface
@@ -118,6 +124,9 @@ def start_scanner(iface):
     while True:
         try:
             sniff(iface=iface, prn=packet_handler, store=0)
+        except KeyboardInterrupt:
+            print(print("\n[!] Stopping sniffer... cleaning up."))
+            sys.exit(0)
         except Exception:
             # If the socket fails during a channel hop, wait 50ms and restart
             time.sleep(0.05)
