@@ -11,6 +11,13 @@ if os.geteuid() != 0:
     sys.exit(1)
 
 
+def channel_hopper(interface, channels):
+    while True:
+        for channel in channels:
+            os.system(f"iw dev {interface} set channel {channel}")
+            time.sleep(0.1) # Hop every 100ms
+
+
 def packet_handler(pkt):
     # Only process Beacon frames
     if not pkt.haslayer(Dot11Beacon):
@@ -87,7 +94,7 @@ def packet_handler(pkt):
     print(f"CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<12} {has_wps:<2} | {band}/{freq}{"MHz":<4} | {display_ssid}")
 
 def start_scanner(iface):
-    # 2. CHECK FOR MONITOR MODE
+    # CHECK FOR MONITOR MODE
     # We check the 'type' file in sysfs for the interface
     try:
         with open(f"/sys/class/net/{iface}/type", "r") as f:
@@ -111,6 +118,22 @@ def start_scanner(iface):
 
 
 if __name__ == "__main__":
-    # Change 'wlan0mon' to your monitor interface name
+    # Change 'wlan0mon' to your monitor interface name!
     target_iface = "wlan0mon"
+
+    # 802.11 / WiFi Channels List
+    essential_2p4ghz_channels = (1, 6, 11)
+    essential_5ghz_unii1_channels = (36, 40, 44, 48)
+    essential_5ghz_unii3_channels = (149, 153, 157, 161)
+    all_2p4ghz_channels = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+    all_5ghz_channels = (36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165)
+
+    # CHANNEL SETTING FOR CHANNEL HOPPER
+    channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
+
+    # START CHANNEL HOPPER IN ITS OWN THREAD
+    hopper_thread = threading.Thread(target=channel_hopper, args=("wlan0", channels), daemon=True)
+    hopper_thread.start()
+
+    # START THE PACKET HANDLER
     start_scanner(target_iface)
