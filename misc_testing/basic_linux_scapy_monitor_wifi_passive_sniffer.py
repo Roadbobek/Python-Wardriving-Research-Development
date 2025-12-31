@@ -126,7 +126,8 @@ def start_scanner(iface):
             sniff(iface=iface, prn=packet_handler, store=0)
         except KeyboardInterrupt:
             print(print("\n[!] Stopping sniffer... cleaning up."))
-            sys.exit(0)
+            os._exit(0)
+            # sys.exit(0)
         except Exception:
             # If the socket fails during a channel hop, wait 50ms and restart
             time.sleep(0.05)
@@ -145,7 +146,9 @@ if __name__ == "__main__":
     all_5ghz_channels = (36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165)
 
     # CHANNEL SETTING FOR CHANNEL HOPPER
-    channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
+
+    # channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
+    channels = all_2p4ghz_channels + all_5ghz_channels # All 2.4GHz & 5GHz channels
 
     # START CHANNEL HOPPER IN ITS OWN THREAD
     hopper_thread = threading.Thread(target=channel_hopper, args=(target_iface, channels), daemon=True)
