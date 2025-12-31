@@ -1,6 +1,7 @@
-import sys
 import os
+import sys
 import logging
+from datetime import datetime
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
@@ -97,7 +98,7 @@ def packet_handler(pkt):
     #          p = p.payload
 
     # PRINT FORMATTED OUTPUT
-    print(f"CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<12} {has_wps:<2} | {band}/{freq}{"MHz":<4} | {display_ssid}")
+    print(f"[>] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) | CH:{channel:>3} | {rssi:>4}dBm | {bssid} | {security:<12} {has_wps:<2} | {band}/{freq}{"MHz":<4} | {display_ssid}")
 
 
 def start_scanner(iface):
@@ -116,16 +117,20 @@ def start_scanner(iface):
         print(f"[!] ERROR: Could not verify mode for {iface}.")
         sys.exit(1)
 
-    print(f"\n[*] Sniffing on {iface}... Press Ctrl+C to stop.")
+    # Get time with milliseconds
+    # %f is microseconds (6 digits), so we take the first 3 for milliseconds
+    # ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+    print(f"\n[*] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Sniffing on {iface}... Press Ctrl+C to stop.")
     print("-" * 100)
     print(f"{'CH':<6} | {'SIG':<7} | {'BSSID':<17} | {'SECURITY':<10} {'WPS':<4} | {'BAND / FREQ':<15} | {'SSID'}")
     print("-" * 100)
 
     while True:
         try:
-            sniff(iface=iface, prn=packet_handler, store=0)
+            sniff(iface=iface, prn=packet_handler, store=0, timeout=3) # Pause every 3 seconds to check for CTRL+C
         except KeyboardInterrupt:
-            print(print("\n[!] Stopping sniffer... cleaning up."))
+            print(f"\n[!] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Stopping sniffer... cleaning up.")
             os._exit(0)
             # sys.exit(0)
         except Exception:
@@ -156,4 +161,3 @@ if __name__ == "__main__":
 
     # START THE PACKET HANDLER
     start_scanner(target_iface)
-
