@@ -23,7 +23,7 @@ def check_environment():
         print("[!] ERROR: This script must be run as root (sudo).")
         sys.exit(1)
 
-    # 3. CHECK FOR THE 'iw' UTILITY, (Required for the channel hopper)
+    # CHECK FOR THE 'iw' UTILITY, (Required for the channel hopper)
     if shutil.which("iw") is None:
         print("[!] ERROR: The 'iw' tool is missing. Install it with: sudo apt install iw")
         sys.exit(1)
