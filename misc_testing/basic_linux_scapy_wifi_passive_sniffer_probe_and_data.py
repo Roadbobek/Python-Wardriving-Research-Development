@@ -1,7 +1,7 @@
 # Basic script to scan for probe requests and activity in data frames.
 
 from scapy.all import *
-from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt, Dot11ProbeReq
+from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt, Dot11ProbeReq, RadioTap
 
 
 def channel_hopper(interface, channels):
@@ -14,90 +14,39 @@ def channel_hopper(interface, channels):
 
 
 def packet_handler(pkt):
-    # 1. Capture Probes (For example, a phones looking for Wi-Fi)
+    # Try to get Frequency from RadioTap first (Works for ALL frames)
+    freq = "???"
+    band = "???"
+    channel = "???"
+
+    if pkt.haslayer(RadioTap):
+        try:
+            freq = pkt[RadioTap].ChannelFrequency
+            if 2400 <= freq <= 2500:
+                band = "2.4GHz"
+                # Math for 2.4GHz
+                channel = 14 if freq == 2484 else (freq - 2407) // 5 + 1
+            elif 5000 <= freq <= 6000:
+                band = "5GHz"
+                # Math for 5GHz
+                channel = (freq - 5000) // 5
+        except AttributeError:
+            pass
+
+    # 1. Capture Probes
     if pkt.haslayer(Dot11ProbeReq):
         client_mac = pkt.addr2
         requested_ssid = pkt.info.decode(errors="ignore") or "[Any]"
-
-        # EXTRACT BAND & FREQUENCY
-        # Extract frequency from the RadioTap layer
-        # .ChannelFrequency is a standard field in the RadioTap header
-        try:
-            freq = pkt.ChannelFrequency
-            if 2400 <= freq <= 2500:
-                band = "2.4GHz"
-            elif 5000 <= freq <= 5900:
-                band = "5GHz"
-            else:
-                band = f"{freq}MHz"  # For 6GHz or unusual frequencies
-        except AttributeError:
-            band = "???"
-
-        # EXTRACT CHANNEL
-        # Channel is stored in a specific IE (Information Element)
-        stats = pkt[Dot11Beacon].network_stats()
-        channel = stats.get("channel")
-
-        # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
-        if channel is None:
-            try:
-                freq = pkt.ChannelFrequency
-                if freq == 2484:
-                    channel = 14
-                elif 2407 <= freq <= 2477:
-                    channel = (freq - 2407) // 5 + 1
-                elif 5000 <= freq <= 5895:
-                    channel = (freq - 5000) // 5
-                else:
-                    channel = "???"
-            except AttributeError:
-                channel = "???"
-
         print(f"[*] [{band}/{freq}MHz | CH: {channel}] PROBE: Client {client_mac} is looking for '{requested_ssid}'")
 
-    # 2. Capture Client-to-AP Activity (Actual traffic)
-    elif pkt.haslayer(Dot11) and pkt.type == 2: # Type 2 is Data
-        # addr1 = Receiver, addr2 = Transmitter, addr3 = BSSID
-        # We look for packets where addr1 or addr2 is a client
-        client = pkt.addr1 if pkt.addr2 == pkt.addr3 else pkt.addr2
-        ap = pkt.addr3
+    # 2. Capture Data Frames (Activity)
+    elif pkt.haslayer(Dot11) and pkt.type == 2:
+        # Determine Client vs AP
+        bssid = pkt.addr3
+        client = pkt.addr1 if pkt.addr2 == bssid else pkt.addr2
 
-        # EXTRACT BAND & FREQUENCY
-        # Extract frequency from the RadioTap layer
-        # .ChannelFrequency is a standard field in the RadioTap header
-        try:
-            freq = pkt.ChannelFrequency
-            if 2400 <= freq <= 2500:
-                band = "2.4GHz"
-            elif 5000 <= freq <= 5900:
-                band = "5GHz"
-            else:
-                band = f"{freq}MHz"  # For 6GHz or unusual frequencies
-        except AttributeError:
-            band = "???"
-
-        # EXTRACT CHANNEL
-        # Channel is stored in a specific IE (Information Element)
-        stats = pkt[Dot11Beacon].network_stats()
-        channel = stats.get("channel")
-
-        # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
-        if channel is None:
-            try:
-                freq = pkt.ChannelFrequency
-                if freq == 2484:
-                    channel = 14
-                elif 2407 <= freq <= 2477:
-                    channel = (freq - 2407) // 5 + 1
-                elif 5000 <= freq <= 5895:
-                    channel = (freq - 5000) // 5
-                else:
-                    channel = "???"
-            except AttributeError:
-                channel = "???"
-
-        if client != "ff:ff:ff:ff:ff:ff": # Ignore broadcasts
-            print(f"[*] [{band}/{freq}MHz | CH: {channel}] ACTIVE: Client {client} is talking to AP {ap}")
+        if client and client != "ff:ff:ff:ff:ff:ff":
+            print(f"[*] [{band}/{freq}MHz | CH: {channel}] ACTIVE: Client {client} is talking to AP {bssid}")
 
 
 # 802.11 / WiFi Channels List

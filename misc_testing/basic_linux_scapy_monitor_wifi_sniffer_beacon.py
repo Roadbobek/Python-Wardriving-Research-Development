@@ -151,7 +151,11 @@ def packet_handler(pkt):
     # EXTRACT CHANNEL
     # Channel is stored in a specific IE (Information Element)
     stats = pkt[Dot11Beacon].network_stats()
-    channel = stats.get("channel")
+    # channel = stats.get("channel")
+    channel = None
+
+    # TODO: LEARN AND SORT THIS SHIT OUT!!!
+    # IS THE ROUTER LYING TO ME??? CAN I TRUST IT??? PLEASE
 
     # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
     if channel is None:
