@@ -20,19 +20,18 @@ def packet_handler(pkt):
         requested_ssid = pkt.info.decode(errors="ignore") or "[Any]"
 
         # EXTRACT BAND & FREQUENCY
-        if pkt.haslayer(Dot11Beacon):
-            # Extract frequency from the RadioTap layer
-            # .ChannelFrequency is a standard field in the RadioTap header
-            try:
-                freq = pkt.ChannelFrequency
-                if 2400 <= freq <= 2500:
-                    band = "2.4GHz"
-                elif 5000 <= freq <= 5900:
-                    band = "5GHz"
-                else:
-                    band = f"{freq}MHz"  # For 6GHz or unusual frequencies
-            except AttributeError:
-                band = "???"
+        # Extract frequency from the RadioTap layer
+        # .ChannelFrequency is a standard field in the RadioTap header
+        try:
+            freq = pkt.ChannelFrequency
+            if 2400 <= freq <= 2500:
+                band = "2.4GHz"
+            elif 5000 <= freq <= 5900:
+                band = "5GHz"
+            else:
+                band = f"{freq}MHz"  # For 6GHz or unusual frequencies
+        except AttributeError:
+            band = "???"
 
         # EXTRACT CHANNEL
         # Channel is stored in a specific IE (Information Element)
@@ -64,19 +63,18 @@ def packet_handler(pkt):
         ap = pkt.addr3
 
         # EXTRACT BAND & FREQUENCY
-        if pkt.haslayer(Dot11Beacon):
-            # Extract frequency from the RadioTap layer
-            # .ChannelFrequency is a standard field in the RadioTap header
-            try:
-                freq = pkt.ChannelFrequency
-                if 2400 <= freq <= 2500:
-                    band = "2.4GHz"
-                elif 5000 <= freq <= 5900:
-                    band = "5GHz"
-                else:
-                    band = f"{freq}MHz"  # For 6GHz or unusual frequencies
-            except AttributeError:
-                band = "???"
+        # Extract frequency from the RadioTap layer
+        # .ChannelFrequency is a standard field in the RadioTap header
+        try:
+            freq = pkt.ChannelFrequency
+            if 2400 <= freq <= 2500:
+                band = "2.4GHz"
+            elif 5000 <= freq <= 5900:
+                band = "5GHz"
+            else:
+                band = f"{freq}MHz"  # For 6GHz or unusual frequencies
+        except AttributeError:
+            band = "???"
 
         # EXTRACT CHANNEL
         # Channel is stored in a specific IE (Information Element)
