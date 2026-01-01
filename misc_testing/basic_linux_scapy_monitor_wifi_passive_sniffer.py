@@ -129,7 +129,7 @@ def packet_handler(pkt):
             else:
                 band = f"{freq}MHz"  # For 6GHz or unusual frequencies
         except AttributeError:
-            band = "Unknown"
+            band = "???"
 
     # SSID FORMATTING
     if not ssid or ssid.isspace():
@@ -144,7 +144,7 @@ def packet_handler(pkt):
     try:
         rssi = pkt.dBm_AntSignal
     except AttributeError:
-        rssi = "N/A"
+        rssi = "???"
 
     # EXTRACT CHANNEL
     # Channel is stored in a specific IE (Information Element)
@@ -203,7 +203,7 @@ def packet_handler(pkt):
         f"{bssid:<17} | "  # 17 chars
         f"{security[:18]:<18} "  # 18 chars
         f"{has_wps:<5} | "  # 5 chars
-        f"{band[:4]:>4}/{str(freq) + 'MHz':<10} | "  # 15 chars (4 + 1 + 10)
+        f"{band[:4]:>4}/{str(freq) + 'MHz':<6} | " # 11 chars (4 + 1 + 6)
         f"{display_ssid}"  # SSID
     )
     logging.info(output)
@@ -222,7 +222,7 @@ def packet_handler(pkt):
 # BSSID,        17,      Left (<),      Standard MAC length (xx:xx:xx:xx:xx:xx)
 # Security,     18,      Left (<),      Fits WPA2/PSK / AES (Clipped at 18)
 # WPS,          5,       Left (<),      Fits "[WPS]"
-# Band/Freq,    15,      Mixed,         Band (4) + "/" (1) + Freq/MHz (10)
+# Band/Freq,    11,      Mixed,         Band (4) + "/" (1) + Freq/MHz (6)
 # SSID,         inf,     Left (<),      SSID is appended to the end
 
 
@@ -254,7 +254,7 @@ def start_scanner(iface):
     # Standardized Header (Total: 112 chars)
     header = (
         f"{'TIME':<13} | {'CH':<3} | {'SIG':<8} | {'BSSID':<17} | "
-        f"{'SECURITY':<18} {'WPS':<5} | {'BAND/FREQ':<15} | {'SSID'}"
+        f"{'SECURITY':<18} {'WPS':<5} | {'BAND/FREQ':<11} | {'SSID'}"
     )
     logging.info(header)
     logging.info("-" * 112)
