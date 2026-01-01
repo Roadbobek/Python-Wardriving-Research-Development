@@ -151,6 +151,21 @@ def packet_handler(pkt):
     stats = pkt[Dot11Beacon].network_stats()
     channel = stats.get("channel")
 
+    # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
+    if channel is None:
+        try:
+            freq = pkt.ChannelFrequency
+            if freq == 2484:
+                channel = 14
+            elif 2407 <= freq <= 2477:
+                channel = (freq - 2407) // 5 + 1
+            elif 5000 <= freq <= 5895:
+                channel = (freq - 5000) // 5
+            else:
+                channel = "???"
+        except AttributeError:
+            channel = "???"
+
     # EXTRACT DETAILED SECURITY
     # network_stats() parses the RSN and Crypto layers for us
     crypto = stats.get("crypto")
@@ -182,15 +197,14 @@ def packet_handler(pkt):
     # LOG FORMATTED OUTPUT TO CLI & FILE
     # Standardized Output (Matches Header exactly)
     output = (
-        f"({ts}) | "  # Time (13 chars with parens)
-        f"{str(channel):>3} | "  # CH (3)
-        f"{str(rssi):>4} dBm | "  # SIG (7)
-        f"{bssid:<17} | "  # BSSID (17)
-        f"{security[:18]:<18} "  # SECURITY (18) - clipped to prevent shifting
-        f"{has_wps:<5} | "  # WPS (5)
-        # We combine freq and MHz into one 11-character string
-        f"{band[:4]:>4}/{str(freq) + 'MHz':<10} | " # BAND/FREQ (15)
-        f"{display_ssid}"  # SSID (Remainder)
+        f"({ts}) | "  # 13 chars
+        f"{str(channel):>3} | "  # 3 chars
+        f"{str(rssi):>4} dBm | "  # 8 chars total (4 + 1 space + 3)
+        f"{bssid:<17} | "  # 17 chars
+        f"{security[:18]:<18} "  # 18 chars
+        f"{has_wps:<5} | "  # 5 chars
+        f"{band[:4]:>4}/{str(freq) + 'MHz':<10} | "  # 15 chars (4 + 1 + 10)
+        f"{display_ssid}"  # SSID
     )
     logging.info(output)
 
@@ -233,15 +247,15 @@ def start_scanner(iface):
     # LOG START MESSAGE TO CLI & FILE
     logging.info(f"\n[*] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Sniffing on {iface}... Press Ctrl+C to stop.")
     logging.info(f"[*] Saving logs to: {log_path}")
-    logging.info("-" * 108)
+    logging.info("-" * 112)
 
-    # Standardized Header (Total: 108 chars)
+    # Standardized Header (Total: 112 chars)
     header = (
-        f"{'TIME':<13} | {'CH':<3} | {'SIG':<7} | {'BSSID':<17} | "
+        f"{'TIME':<13} | {'CH':<3} | {'SIG':<8} | {'BSSID':<17} | "
         f"{'SECURITY':<18} {'WPS':<5} | {'BAND/FREQ':<15} | {'SSID'}"
     )
     logging.info(header)
-    logging.info("-" * 108)
+    logging.info("-" * 112)
 
     # Legacy header
     # logging.info(
