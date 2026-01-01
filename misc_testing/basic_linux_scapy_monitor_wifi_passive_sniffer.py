@@ -217,11 +217,13 @@ def packet_handler(pkt):
 
 # Column,       Width,   Alignment,     Logic
 # Time,         13,      Left (<),      Fits (HH:MM:SS.ms)
-# CH,           3,       Right (>),     "Aligns ""6"" under ""157"""
-# SIG,          7,       Right (>),     "Fits ""-100 dBm"""
-# BSSID,        17,      Left (<),      Standard MAC length
-# Security,     18,      Left (<),      Fits WPA2/PSK / AES
-# WPS,          5,       Left (<),      Fits [WPS]
+# CH,           3,       Right (>),     Aligns "6" under "157"
+# SIG,          8,       Right (>),     Fits "-100 dBm" (4 chars + 1 space + 3 unit)
+# BSSID,        17,      Left (<),      Standard MAC length (xx:xx:xx:xx:xx:xx)
+# Security,     18,      Left (<),      Fits WPA2/PSK / AES (Clipped at 18)
+# WPS,          5,       Left (<),      Fits "[WPS]"
+# Band/Freq,    15,      Mixed,         Band (4) + "/" (1) + Freq/MHz (10)
+# SSID,         inf,     Left (<),      SSID is appended to the end
 
 
 def start_scanner(iface):
