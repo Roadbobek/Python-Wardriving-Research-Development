@@ -201,7 +201,7 @@ def packet_handler(pkt):
         f"{str(channel):>3} | "  # 3 chars
         f"{str(rssi):>4} dBm | "  # 8 chars total (4 + 1 space + 3)
         f"{bssid:<17} | "  # 17 chars
-        f"{security[:18]:<18} "  # 18 chars
+        f"{security[:22]:<22} "  # 22 chars
         f"{has_wps:<5} | "  # 5 chars
         f"{band[:4]:>4}/{str(freq) + 'MHz':<6} | " # 11 chars (4 + 1 + 6)
         f"{display_ssid}"  # SSID
@@ -220,7 +220,7 @@ def packet_handler(pkt):
 # CH,           3,       Right (>),     Aligns "6" under "157"
 # SIG,          8,       Right (>),     Fits "-100 dBm" (4 chars + 1 space + 3 unit)
 # BSSID,        17,      Left (<),      Standard MAC length (xx:xx:xx:xx:xx:xx)
-# Security,     18,      Left (<),      Fits WPA2/PSK / AES (Clipped at 18)
+# Security,     19,      Left (<),      Fits WPA2/PSK / AES (Clipped at 19)
 # WPS,          5,       Left (<),      Fits "[WPS]"
 # Band/Freq,    11,      Mixed,         Band (4) + "/" (1) + Freq/MHz (6)
 # SSID,         inf,     Left (<),      SSID is appended to the end
@@ -249,15 +249,15 @@ def start_scanner(iface):
     # LOG START MESSAGE TO CLI & FILE
     logging.info(f"\n[*] ({datetime.now().strftime("%H:%M:%S.%f")[:-3]}) Sniffing on {iface}... Press Ctrl+C to stop.")
     logging.info(f"[*] Saving logs to: {log_path}")
-    logging.info("-" * 112)
+    logging.info("-" * 114)
 
-    # Standardized Header (Total: 112 chars)
+    # Standardized Header (Total: 103 chars)
     header = (
-        f"{'TIME':<13} | {'CH':<3} | {'SIG':<8} | {'BSSID':<17} | "
-        f"{'SECURITY':<18} {'WPS':<5} | {'BAND/FREQ':<11} | {'SSID'}"
+        f"{'TIME':<14} | {'CH':<3} | {'SIG':<8} | {'BSSID':<17} | " # Extra space after TIME
+        f"{'SECURITY':<22} {'WPS':<5} | {'BAND/FREQ':<11} | {'SSID'}"
     )
     logging.info(header)
-    logging.info("-" * 112)
+    logging.info("-" * 114)
 
     # Legacy header
     # logging.info(
