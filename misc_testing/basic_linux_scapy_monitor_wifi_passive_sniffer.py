@@ -11,6 +11,27 @@ from scapy.all import *
 from scapy.layers.dot11 import Dot11Beacon, Dot11, Dot11Elt
 
 
+# PRE RUN CHECKS
+def check_environment():
+    # CHECK OS, Linux only
+    if platform.system() != "Linux":
+        print("[!] ERROR: This script requires a Linux-based OS (Kali, Arch, Ubuntu, etc).")
+        sys.exit(1)
+
+    # CHECK FOR ROOT, (Required for Scapy / Monitor mode)
+    if os.geteuid() != 0:
+        print("[!] ERROR: This script must be run as root (sudo).")
+        sys.exit(1)
+
+    # 3. CHECK FOR THE 'iw' UTILITY, (Required for the channel hopper)
+    if shutil.which("iw") is None:
+        print("[!] ERROR: The 'iw' tool is missing. Install it with: sudo apt install iw")
+        sys.exit(1)
+
+# RUN PRE RUN CHECKS
+check_environment()
+
+
 # FOLDER AND FILE SETUP
 log_folder = "wardrive_results"
 # Generates a unique name: wardrive_20260101_133367.txt
@@ -72,24 +93,6 @@ scapy_log.addFilter(NoneTypeFilter()) # But block the NoneType ones
 #     print("\n[!] ERROR: This script requires root privileges to sniff raw packets.")
 #     print("    Please run with: sudo python script_name.py\n")
 #     sys.exit(1)
-
-
-# PRE RUN CHECKS
-def check_environment():
-    # CHECK OS, Linux only
-    if platform.system() != "Linux":
-        print("[!] ERROR: This script requires a Linux-based OS (Kali, Arch, Ubuntu, etc).")
-        sys.exit(1)
-
-    # CHECK FOR ROOT, (Required for Scapy / Monitor mode)
-    if os.geteuid() != 0:
-        print("[!] ERROR: This script must be run as root (sudo).")
-        sys.exit(1)
-
-    # 3. CHECK FOR THE 'iw' UTILITY, (Required for the channel hopper)
-    if shutil.which("iw") is None:
-        print("[!] ERROR: The 'iw' tool is missing. Install it with: sudo apt install iw")
-        sys.exit(1)
 
 
 def channel_hopper(interface, channels):
@@ -294,9 +297,6 @@ if __name__ == "__main__":
     # CHANNEL SETTING FOR CHANNEL HOPPER
     # channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
     channels = all_2p4ghz_channels + all_5ghz_channels # All 2.4GHz & 5GHz channels
-
-    # RUN PRE RUN CHECKS
-    check_environment()
 
     # START CHANNEL HOPPER IN ITS OWN THREAD
     hopper_thread = threading.Thread(target=channel_hopper, args=(target_iface, channels), daemon=True)
