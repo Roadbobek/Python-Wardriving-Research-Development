@@ -18,7 +18,43 @@ def packet_handler(pkt):
     if pkt.haslayer(Dot11ProbeReq):
         client_mac = pkt.addr2
         requested_ssid = pkt.info.decode(errors="ignore") or "[Any]"
-        print(f"[*] PROBE: Client {client_mac} is looking for '{requested_ssid}'")
+
+        # EXTRACT BAND & FREQUENCY
+        if pkt.haslayer(Dot11Beacon):
+            # Extract frequency from the RadioTap layer
+            # .ChannelFrequency is a standard field in the RadioTap header
+            try:
+                freq = pkt.ChannelFrequency
+                if 2400 <= freq <= 2500:
+                    band = "2.4GHz"
+                elif 5000 <= freq <= 5900:
+                    band = "5GHz"
+                else:
+                    band = f"{freq}MHz"  # For 6GHz or unusual frequencies
+            except AttributeError:
+                band = "???"
+
+        # EXTRACT CHANNEL
+        # Channel is stored in a specific IE (Information Element)
+        stats = pkt[Dot11Beacon].network_stats()
+        channel = stats.get("channel")
+
+        # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
+        if channel is None:
+            try:
+                freq = pkt.ChannelFrequency
+                if freq == 2484:
+                    channel = 14
+                elif 2407 <= freq <= 2477:
+                    channel = (freq - 2407) // 5 + 1
+                elif 5000 <= freq <= 5895:
+                    channel = (freq - 5000) // 5
+                else:
+                    channel = "???"
+            except AttributeError:
+                channel = "???"
+
+        print(f"[*] [{band}/{freq}MHz | CH: {channel}] PROBE: Client {client_mac} is looking for '{requested_ssid}'")
 
     # 2. Capture Client-to-AP Activity (Actual traffic)
     elif pkt.haslayer(Dot11) and pkt.type == 2: # Type 2 is Data
@@ -26,8 +62,44 @@ def packet_handler(pkt):
         # We look for packets where addr1 or addr2 is a client
         client = pkt.addr1 if pkt.addr2 == pkt.addr3 else pkt.addr2
         ap = pkt.addr3
+
+        # EXTRACT BAND & FREQUENCY
+        if pkt.haslayer(Dot11Beacon):
+            # Extract frequency from the RadioTap layer
+            # .ChannelFrequency is a standard field in the RadioTap header
+            try:
+                freq = pkt.ChannelFrequency
+                if 2400 <= freq <= 2500:
+                    band = "2.4GHz"
+                elif 5000 <= freq <= 5900:
+                    band = "5GHz"
+                else:
+                    band = f"{freq}MHz"  # For 6GHz or unusual frequencies
+            except AttributeError:
+                band = "???"
+
+        # EXTRACT CHANNEL
+        # Channel is stored in a specific IE (Information Element)
+        stats = pkt[Dot11Beacon].network_stats()
+        channel = stats.get("channel")
+
+        # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
+        if channel is None:
+            try:
+                freq = pkt.ChannelFrequency
+                if freq == 2484:
+                    channel = 14
+                elif 2407 <= freq <= 2477:
+                    channel = (freq - 2407) // 5 + 1
+                elif 5000 <= freq <= 5895:
+                    channel = (freq - 5000) // 5
+                else:
+                    channel = "???"
+            except AttributeError:
+                channel = "???"
+
         if client != "ff:ff:ff:ff:ff:ff": # Ignore broadcasts
-            print(f"[*] ACTIVE: Client {client} is talking to AP {ap}")
+            print(f"[*] [{band}/{freq}MHz | CH: {channel}] ACTIVE: Client {client} is talking to AP {ap}")
 
 
 # 802.11 / WiFi Channels List
