@@ -41,12 +41,12 @@ all_5ghz_channels = (36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 12
 # channels = essential_2p4ghz_channels + essential_5ghz_unii1_channels + essential_5ghz_unii3_channels # All essential 2.4GHz & 5GHz channels
 channels = all_2p4ghz_channels + all_5ghz_channels # All 2.4GHz & 5GHz channels
 
+# Change 'wlan0mon' to your monitor interface name!
+target_iface = "wlan0mon"
+
 # START CHANNEL HOPPER IN ITS OWN THREAD
 hopper_thread = threading.Thread(target=channel_hopper, args=(target_iface, channels), daemon=True)
 hopper_thread.start()
-
-# Change 'wlan0mon' to your monitor interface name!
-target_iface = "wlan0mon"
 
 # START SNIFFING PACKETS
 sniff(iface=target_iface, prn=packet_handler, store=0, timeout=1)
