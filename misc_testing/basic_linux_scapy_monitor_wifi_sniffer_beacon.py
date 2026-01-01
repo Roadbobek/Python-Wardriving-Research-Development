@@ -1,3 +1,5 @@
+# This script currently scans for beacon frames, it is missing probe requests, data frame analysis, and gps functionality.
+
 import os
 import sys
 import platform
