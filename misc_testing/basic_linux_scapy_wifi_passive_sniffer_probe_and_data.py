@@ -48,5 +48,15 @@ target_iface = "wlan0mon"
 hopper_thread = threading.Thread(target=channel_hopper, args=(target_iface, channels), daemon=True)
 hopper_thread.start()
 
-# START SNIFFING PACKETS
-sniff(iface=target_iface, prn=packet_handler, store=0, timeout=1)
+try:
+    while True:
+        try:
+            sniff(iface=target_iface, prn=packet_handler, store=0, timeout=1) # START SNIFFING PACKETS
+        except Exception as e:
+            if "NoneType" not in str(e):
+                print(f"[!] Sniffer error: {e}")
+            time.sleep(0.05)  # 50ms sleep
+            continue
+except KeyboardInterrupt:
+    print("Stopping sniffer... cleaning up.")
+    os._exit(0)
