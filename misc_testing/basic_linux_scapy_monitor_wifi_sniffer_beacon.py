@@ -149,30 +149,26 @@ def packet_handler(pkt):
         rssi = "???"
 
     # EXTRACT CHANNEL
-    # Channel is stored in a specific IE (Information Element)
-    stats = pkt[Dot11Beacon].network_stats()
-    # channel = stats.get("channel")
-    channel = None
-
-    # TODO: LEARN AND SORT THIS SHIT OUT!!!
-    # IS THE ROUTER LYING TO ME??? CAN I TRUST IT??? PLEASE
-
-    # EXTRACT CHANNEL BACKUP, If channel is None, calculate it from Frequency
-    if channel is None:
-        try:
-            freq = pkt.ChannelFrequency
-            if freq == 2484:
-                channel = 14
-            elif 2407 <= freq <= 2477:
-                channel = (freq - 2407) // 5 + 1
-            elif 5000 <= freq <= 5895:
-                channel = (freq - 5000) // 5
-            else:
-                channel = "???"
-        except AttributeError:
+    # calculate it from Frequency
+    try:
+        freq = pkt.ChannelFrequency
+        if freq == 2484:
+            channel = 14
+        elif 2407 <= freq <= 2477:
+            channel = (freq - 2407) // 5 + 1
+        elif 5000 <= freq <= 5895:
+            channel = (freq - 5000) // 5
+        else:
             channel = "???"
+    except AttributeError:
+        channel = "???"
+
+    # Channel is stored in a specific IE (Information Element)
+    # stats = pkt[Dot11Beacon].network_stats()
+    # channel = stats.get("channel")
 
     # EXTRACT DETAILED SECURITY
+    stats = pkt[Dot11Beacon].network_stats()
     # network_stats() parses the RSN and Crypto layers for us
     crypto = stats.get("crypto")
     security = " / ".join(crypto) if crypto else "OPEN"
