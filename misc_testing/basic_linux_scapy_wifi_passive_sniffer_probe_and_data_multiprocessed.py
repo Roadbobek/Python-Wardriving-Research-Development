@@ -19,41 +19,42 @@ def channel_hopper(interface, channels):
 
 
 def worker():
-    pkt = packet_queue.get()  # Pull a packet from the bucket
+    while True:
+        pkt = packet_queue.get()  # Pull a packet from the bucket
 
-    # Try to get Frequency from RadioTap first (Works for ALL frames)
-    freq = "???"
-    band = "???"
-    channel = "???"
+        # Try to get Frequency from RadioTap first (Works for ALL frames)
+        freq = "???"
+        band = "???"
+        channel = "???"
 
-    if pkt.haslayer(RadioTap):
-        try:
-            freq = pkt[RadioTap].ChannelFrequency
-            if 2400 <= freq <= 2500:
-                band = "2.4GHz"
-                # Math for 2.4GHz
-                channel = 14 if freq == 2484 else (freq - 2407) // 5 + 1
-            elif 5000 <= freq <= 6000:
-                band = "5GHz"
-                # Math for 5GHz
-                channel = (freq - 5000) // 5
-        except AttributeError:
-            pass
+        if pkt.haslayer(RadioTap):
+            try:
+                freq = pkt[RadioTap].ChannelFrequency
+                if 2400 <= freq <= 2500:
+                    band = "2.4GHz"
+                    # Math for 2.4GHz
+                    channel = 14 if freq == 2484 else (freq - 2407) // 5 + 1
+                elif 5000 <= freq <= 6000:
+                    band = "5GHz"
+                    # Math for 5GHz
+                    channel = (freq - 5000) // 5
+            except AttributeError:
+                pass
 
-    # 1. Capture Probes
-    if pkt.haslayer(Dot11ProbeReq):
-        client_mac = pkt.addr2
-        requested_ssid = pkt.info.decode(errors="ignore") or "[Any]"
-        print(f"[*] [{band}/{freq}MHz | CH: {channel}] PROBE: Client {client_mac} is looking for '{requested_ssid}'")
+        # 1. Capture Probes
+        if pkt.haslayer(Dot11ProbeReq):
+            client_mac = pkt.addr2
+            requested_ssid = pkt.info.decode(errors="ignore") or "[Any]"
+            print(f"[*] [{band}/{freq}MHz | CH: {channel}] PROBE: Client {client_mac} is looking for '{requested_ssid}'")
 
-    # 2. Capture Data Frames (Activity)
-    elif pkt.haslayer(Dot11) and pkt.type == 2:
-        # Determine Client vs AP
-        bssid = pkt.addr3
-        client = pkt.addr1 if pkt.addr2 == bssid else pkt.addr2
+        # 2. Capture Data Frames (Activity)
+        elif pkt.haslayer(Dot11) and pkt.type == 2:
+            # Determine Client vs AP
+            bssid = pkt.addr3
+            client = pkt.addr1 if pkt.addr2 == bssid else pkt.addr2
 
-        if client and client != "ff:ff:ff:ff:ff:ff":
-            print(f"[*] [{band}/{freq}MHz | CH: {channel}] ACTIVE: Client {client} is talking to AP {bssid}")
+            if client and client != "ff:ff:ff:ff:ff:ff":
+                print(f"[*] [{band}/{freq}MHz | CH: {channel}] ACTIVE: Client {client} is talking to AP {bssid}")
 
 
 def catcher(pkt):
