@@ -70,7 +70,7 @@ hopper_thread.start()
 try:
     while True:
         try:
-            sniff(iface=target_iface, prn=packet_handler, store=0, timeout=1) # START SNIFFING PACKETS
+            sniff(iface=target_iface, prn=packet_handler, store=0, timeout=1, filter="type mgt subtype probe-req or type data") # START SNIFFING PACKETS
         except Exception as e:
             if "NoneType" not in str(e):
                 print(f"[!] Sniffer error: {e}")
