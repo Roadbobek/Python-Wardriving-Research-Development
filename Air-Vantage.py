@@ -178,13 +178,22 @@ def load_oui_database(path):
         print(f"[!] Error loading OUI database: {e}")
         return {}
 
+# Global cache for vendors to avoid re-parsing and re-searching
+vendor_cache = {}
+
 def get_vendor(mac, oui_db=None):
-    """Resolves OUI to Vendor using the provided database."""
+    """Resolves OUI to Vendor using the provided database with caching."""
     if not mac: return "Unknown"
-    mac = mac.upper()
+    
+    # Check cache first
+    if mac in vendor_cache:
+        return vendor_cache[mac]
+        
+    mac_upper = mac.upper()
+    result = mac_upper[:8] # Default fallback
     
     if oui_db:
-        clean_mac = mac.replace(":", "").replace("-", "").replace(".", "")
+        clean_mac = mac_upper.replace(":", "").replace("-", "").replace(".", "")
         if len(clean_mac) == 12:
             prefix = clean_mac[:6]
             if prefix in oui_db:
@@ -192,47 +201,52 @@ def get_vendor(mac, oui_db=None):
                 mac_int = int(clean_mac, 16)
                 for mask, val, name in oui_db[prefix]:
                     if (mac_int >> (48 - mask)) == val:
-                        return name
+                        result = name
+                        break
     
-    return mac[:8]
+    # Cache the result
+    vendor_cache[mac] = result
+    return result
 
-def get_security_mode(crypto):
+def get_security_mode(pkt):
     """
     Parses Scapy's crypto set into a precise security mode string.
-    Prioritizes WPA3 > WPA2 > WPA > WEP > OPEN.
+    Uses Scapy's built-in network_stats() for robust parsing.
     """
-    if not crypto:
-        return "OPEN"
-    
-    # Check for WPA3 features
-    if "OWE" in crypto:
-        return "WPA3-OWE"
-    if "SAE" in crypto:
-        if "PSK" in crypto or "WPA2" in crypto: 
-            # Mixed mode often advertises WPA2+PSK and SAE
-            # Scapy usually sees 'WPA2' tag + 'SAE' AKM + 'PSK' AKM
-            return "WPA2/WPA3 Mixed"
-        return "WPA3-SAE"
-    
-    # Check for WPA2
-    if "WPA2" in crypto:
-        if "WPA" in crypto:
-            return "WPA/WPA2 Mixed"
-        if "PSK" in crypto:
+    try:
+        stats = pkt[Dot11Beacon].network_stats()
+        crypto = stats.get("crypto")
+        
+        if not crypto:
+            return "OPEN"
+            
+        # Join the set into a string like "WPA2/PSK" or "WPA2/SAE"
+        # Scapy returns a set of strings, e.g., {'WPA2', 'PSK'}
+        # We want to format this nicely.
+        
+        # Common combinations mapping
+        if "WPA2" in crypto and "PSK" in crypto and "SAE" in crypto:
+             return "WPA2/WPA3 Mixed"
+        if "WPA2" in crypto and "SAE" in crypto:
+            return "WPA3-SAE"
+        if "WPA2" in crypto and "PSK" in crypto:
             return "WPA2-PSK"
-        # If PSK is missing but WPA2 is present, it's likely Enterprise (802.1x)
-        return "WPA2-Enterprise" 
-        
-    # Check for WPA
-    if "WPA" in crypto:
-        if "PSK" in crypto:
+        if "WPA2" in crypto and "EAP" in crypto:
+            return "WPA2-Enterprise"
+        if "WPA" in crypto and "PSK" in crypto:
             return "WPA-PSK"
-        return "WPA-Enterprise"
+        if "WPA" in crypto and "EAP" in crypto:
+            return "WPA-Enterprise"
+        if "WEP" in crypto:
+            return "WEP"
+        if "OWE" in crypto:
+            return "WPA3-OWE"
+            
+        # Fallback: join all detected tags to ensure we never return "UNKNOWN" if data exists
+        return "/".join(sorted(crypto))
         
-    if "WEP" in crypto:
-        return "WEP"
-        
-    return "UNKNOWN"
+    except Exception:
+        return "UNKNOWN"
 
 # ==============================================================================
 # PROCESS A: CATCHER
@@ -339,15 +353,19 @@ def processor(packet_queue, stop_event, stats_queue):
         if pkt.haslayer(Dot11Beacon):
             bssid = dot11.addr2
             ssid = pkt[Dot11Elt].info.decode(errors="ignore") if pkt.haslayer(Dot11Elt) else ""
-            if not ssid or ssid.strip() == "":
+            
+            # Improved Hidden SSID Detection (Check for empty string OR null bytes)
+            if not ssid or ssid.strip() == "" or ssid.replace("\x00", "") == "":
                 ssid = "[HIDDEN]"
             
             # Security Parsing (Exact)
-            network_stats = pkt[Dot11Beacon].network_stats()
-            crypto = network_stats.get("crypto")
-            security_mode = get_security_mode(crypto)
+            # Use the robust Scapy network_stats() method directly on the packet
+            security_mode = get_security_mode(pkt)
             
             # WPS Detection
+            # Check for the Vendor Specific Element (ID 221) that matches WPS
+            # 00:50:f2:04 is the hex signature for Microsoft/WPS
+            # FASTEST METHOD: Search raw bytes directly to avoid object overhead
             has_wps = False
             if b"\x00P\xf2\x04" in raw_pkt:
                 has_wps = True
